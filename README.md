@@ -1,3 +1,7 @@
+# Website working on: https://bnsft.netlify.app/ - no trolling please, thanks.
+
+
+
 # Field Boss Timer
 
 ## 📌 Project Description
