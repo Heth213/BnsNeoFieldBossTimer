@@ -3,16 +3,16 @@ import { Volume2, VolumeX, HelpCircle } from 'lucide-react';
 import { supabase } from './supabaseClient';
 
 const BOSS_TIMERS = {
-  Jiangshi: { 'Boss Dead': 300, 'Variant Spawning': 120, 'Variant Dead': 480 },
-  Gigantura: { 'Boss Dead': 300, 'Variant Spawning': 120, 'Variant Dead': 480 },
-  WuFu: { 'Boss Dead': 300, 'Variant Spawning': 120, 'Variant Dead': 480 },
-  Pinchy: { 'Boss Dead': 300, 'Variant Spawning': 120, 'Variant Dead': 480 },
+  Jiangshi: { 'Boss Dead': 300, 'Mutant Spawning': 120, 'Mutant Dead': 480 },
+  Gigantura: { 'Boss Dead': 300, 'Mutant Spawning': 120, 'Mutant Dead': 480 },
+  WuFu: { 'Boss Dead': 300, 'Mutant Spawning': 120, 'Mutant Dead': 480 },
+  Pinchy: { 'Boss Dead': 300, 'Mutant Spawning': 120, 'Mutant Dead': 480 },
   GoldenDeva: {
     'Boss Dead': 300,
-    'Variant Spawning': 120,
-    'Variant Dead': 480,
+    'Mutant Spawning': 120,
+    'Mutant Dead': 480,
   },
-  Bulbari: { 'Boss Dead': 300, 'Variant Spawning': 120, 'Variant Dead': 480 },
+  Bulbari: { 'Boss Dead': 300, 'Mutant Spawning': 120, 'Mutant Dead': 480 },
 };
 
 const alertSound = new Audio('/alert.mp3');
@@ -104,7 +104,7 @@ export default function App() {
               type: t.type,
               endTime: t.end_time,
               timeLeft: Math.max(
-                0,
+                -10,
                 Math.ceil((t.end_time - Date.now()) / 1000)
               ),
             }))
@@ -135,7 +135,7 @@ export default function App() {
                   type: payload.new.type,
                   endTime: payload.new.end_time,
                   timeLeft: Math.max(
-                    0,
+                    -10,
                     Math.ceil((payload.new.end_time - Date.now()) / 1000)
                   ),
                 },
@@ -169,7 +169,7 @@ export default function App() {
             if (timeLeft <= 10 && timeLeft > 0 && audioEnabled) {
               shouldPlay = true;
             }
-            if (timeLeft === 0) {
+            if (timeLeft === -10) {
               return null;
             }
             return { ...t, timeLeft };
@@ -295,11 +295,11 @@ export default function App() {
                   <strong>Boss Dead</strong> - Click when boss is killed
                 </p>
                 <p>
-                  <strong>Variant Spawning</strong> - Click when lightning
+                  <strong>Mutant Spawning</strong> - Click when lightning
                   spawns after boss is killed
                 </p>
                 <p>
-                  <strong>Variant Dead</strong> - Click when lightning boss is
+                  <strong>Mutant Dead</strong> - Click when lightning boss is
                   killed
                 </p>
               </div>
@@ -344,11 +344,13 @@ export default function App() {
               <div
                 key={index}
                 className={`mt-2 p-2 rounded-lg text-white text-center ${
-                  t.timeLeft <= 10
+                  t.timeLeft <= 10 
                     ? 'blink'
-                    : t.type === 'Variant Spawning'
+                    : t.type === 'Mutant Spawning'
                     ? 'bg-orange-500'
+                    : t.timeLeft <= -10 ? 'bg-green-500'
                     : 'bg-gray-700'
+                    
                 }`}
               >
                 {t.channel} channel - {t.type} - {Math.floor(t.timeLeft / 60)}:
@@ -370,7 +372,14 @@ export default function App() {
               {Object.keys(TIMER_VALUES).map((type) => (
                 <button
                   key={type}
-                  className="mt-2 w-full p-2 rounded bg-blue-600 hover:bg-blue-700"
+                  className={`mt-2 w-full p-2 rounded ${
+                    {type} === 'Boss Dead' ? 'bg-red-600 hover:bg-red-700'
+                    : {type} === 'Mutant Spawning' ? 'bg-green-600 hover:bg-green-700'
+                    : {type} === 'Mutant Dead' ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                    
+                }`}
+                  //className="mt-2 w-full p-2 rounded bg-blue-600 hover:bg-blue-700"
                   onClick={() => handleStartTimer(type, i)}
                 >
                   {type}
