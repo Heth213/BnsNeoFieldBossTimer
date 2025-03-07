@@ -351,8 +351,8 @@ export default function App() {
                     
                 }`}
               >
-                {t.channel} channel - {t.type} - {t.timeLeft >= 15 && Math.floor(t.timeLeft-15 / 60)}:
-                {t.timeLeft >= 15 && String(t.timeLeft-15 % 60).padStart(2, '0')}
+                {t.channel} channel - {t.type} - {Math.floor(t.timeLeft-15 / 60)}:
+                {String(t.timeLeft-15 % 60).padStart(2, '0')}
                 {t.timeLeft <= 15 && " SPAWNED"}
               </div>
             ))
