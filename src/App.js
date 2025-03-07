@@ -3,16 +3,16 @@ import { Volume2, VolumeX, HelpCircle } from 'lucide-react';
 import { supabase } from './supabaseClient';
 
 const BOSS_TIMERS = {
-  Jiangshi: { 'Boss Dead': 300, 'Mutant Spawning': 120, 'Mutant Dead': 480 },
-  Gigantura: { 'Boss Dead': 300, 'Mutant Spawning': 120, 'Mutant Dead': 480 },
-  WuFu: { 'Boss Dead': 300, 'Mutant Spawning': 120, 'Mutant Dead': 480 },
-  Pinchy: { 'Boss Dead': 300, 'Mutant Spawning': 120, 'Mutant Dead': 480 },
+  Jiangshi: { 'Boss Dead': 310, 'Mutant Spawning': 130, 'Mutant Dead': 490 },
+  Gigantura: { 'Boss Dead': 310, 'Mutant Spawning': 130, 'Mutant Dead': 490 },
+  WuFu: { 'Boss Dead': 310, 'Mutant Spawning': 130, 'Mutant Dead': 490 },
+  Pinchy: { 'Boss Dead': 310, 'Mutant Spawning': 130, 'Mutant Dead': 490 },
   GoldenDeva: {
-    'Boss Dead': 300,
-    'Mutant Spawning': 120,
-    'Mutant Dead': 480,
+    'Boss Dead': 310,
+    'Mutant Spawning': 130,
+    'Mutant Dead': 490,
   },
-  Bulbari: { 'Boss Dead': 300, 'Mutant Spawning': 120, 'Mutant Dead': 480 },
+  Bulbari: { 'Boss Dead': 310, 'Mutant Spawning': 130, 'Mutant Dead': 490 },
 };
 
 const alertSound = new Audio('/alert.mp3');
@@ -104,7 +104,7 @@ export default function App() {
               type: t.type,
               endTime: t.end_time,
               timeLeft: Math.max(
-                -10,
+                10,
                 Math.ceil((t.end_time - Date.now()) / 1000)
               ),
             }))
@@ -135,7 +135,7 @@ export default function App() {
                   type: payload.new.type,
                   endTime: payload.new.end_time,
                   timeLeft: Math.max(
-                    -10,
+                    10,
                     Math.ceil((payload.new.end_time - Date.now()) / 1000)
                   ),
                 },
@@ -166,10 +166,10 @@ export default function App() {
               0,
               Math.ceil((t.endTime - Date.now()) / 1000)
             );
-            if (timeLeft <= 10 && timeLeft > 0 && audioEnabled) {
+            if (timeLeft <= 20 && timeLeft > 10 && audioEnabled) {
               shouldPlay = true;
             }
-            if (timeLeft === -10) {
+            if (timeLeft === 0) {
               return null;
             }
             return { ...t, timeLeft };
@@ -344,11 +344,11 @@ export default function App() {
               <div
                 key={index}
                 className={`mt-2 p-2 rounded-lg text-white text-center ${
-                  t.timeLeft <= 10 
+                  t.timeLeft <= 20 
                     ? 'blink'
                     : t.type === 'Mutant Spawning'
                     ? 'bg-orange-500'
-                    : t.timeLeft <= -10 ? 'bg-green-500'
+                    : t.timeLeft <= 10 ? 'bg-green-500'
                     : 'bg-gray-700'
                     
                 }`}
@@ -372,13 +372,7 @@ export default function App() {
               {Object.keys(TIMER_VALUES).map((type) => (
                 <button
                   key={type}
-                  className={`mt-2 w-full p-2 rounded ${
-                    {type} === 'Boss Dead' ? 'bg-red-600 hover:bg-red-700'
-                    : {type} === 'Mutant Spawning' ? 'bg-green-600 hover:bg-green-700'
-                    : {type} === 'Mutant Dead' ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-blue-600 hover:bg-blue-700'
-                    
-                }`}
+                  className= {"mt-2 w-full p-2 rounded " + (type == 'Boss Dead' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700')}
                   //className="mt-2 w-full p-2 rounded bg-blue-600 hover:bg-blue-700"
                   onClick={() => handleStartTimer(type, i)}
                 >
