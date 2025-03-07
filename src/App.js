@@ -344,15 +344,16 @@ export default function App() {
               <div
                 key={index}
                 className={`mt-2 p-2 rounded-lg text-white text-center ${
-                  t.timeLeft <= 10 ? 'bg-green-500'
+                  t.timeLeft <= 10 ? 'bg-green-700 line-through'
                     : t.timeLeft <= 20 && t.timeLeft > 10 ? 'blink'
-                    : t.type === 'Mutant Spawning' ? 'bg-orange-500'
+                    : t.type === 'Mutant Spawning' ? 'bg-purple-700'
                     : 'bg-gray-700'
                     
                 }`}
               >
                 {t.channel} channel - {t.type} - {Math.floor(t.timeLeft / 60)}:
                 {String(t.timeLeft % 60).padStart(2, '0')}
+                {t.timeLeft <= 10 && " SPAWNED"}
               </div>
             ))
           )}
