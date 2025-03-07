@@ -372,8 +372,7 @@ export default function App() {
               {Object.keys(TIMER_VALUES).map((type) => (
                 <button
                   key={type}
-                  className= {"mt-2 w-full p-2 rounded " + ({type} == 'Boss Dead' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700')}
-                  //className="mt-2 w-full p-2 rounded bg-blue-600 hover:bg-blue-700"
+                  className="mt-2 w-full p-2 rounded bg-blue-600 hover:bg-blue-700"
                   onClick={() => handleStartTimer(type, i)}
                 >
                   {type}
