@@ -3,16 +3,16 @@ import { Volume2, VolumeX, HelpCircle } from 'lucide-react';
 import { supabase } from './supabaseClient';
 
 const BOSS_TIMERS = {
-  Jiangshi: { 'Boss Dead': 310, 'Mutant Spawning': 130, 'Mutant Dead': 490 },
-  Gigantura: { 'Boss Dead': 310, 'Mutant Spawning': 130, 'Mutant Dead': 490 },
-  WuFu: { 'Boss Dead': 310, 'Mutant Spawning': 130, 'Mutant Dead': 490 },
-  Pinchy: { 'Boss Dead': 310, 'Mutant Spawning': 130, 'Mutant Dead': 490 },
+  Jiangshi: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
+  Gigantura: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
+  WuFu: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
+  Pinchy: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
   GoldenDeva: {
-    'Boss Dead': 310,
-    'Mutant Spawning': 130,
-    'Mutant Dead': 490,
+    'Boss Dead': 315,
+    'Mutant Spawning': 135,
+    'Mutant Dead': 495,
   },
-  Bulbari: { 'Boss Dead': 310, 'Mutant Spawning': 130, 'Mutant Dead': 490 },
+  Bulbari: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
 };
 
 const alertSound = new Audio('/alert.mp3');
@@ -166,7 +166,7 @@ export default function App() {
               0,
               Math.ceil((t.endTime - Date.now()) / 1000)
             );
-            if (timeLeft <= 20 && timeLeft > 10 && audioEnabled) {
+            if (timeLeft <= 25 && timeLeft > 15 && audioEnabled) {
               shouldPlay = true;
             }
             if (timeLeft === 0) {
@@ -217,7 +217,7 @@ export default function App() {
       channelValue < 1 ||
       channelValue > 50
     ) {
-      console.error('Nieprawidłowy kanał');
+      console.error('Wrong channel number');
       return;
     }
     startTimer(channelValue, type);
@@ -344,16 +344,16 @@ export default function App() {
               <div
                 key={index}
                 className={`mt-2 p-2 rounded-lg text-white text-center ${
-                  t.timeLeft <= 10 ? 'bg-green-700 line-through'
-                    : t.timeLeft <= 20 && t.timeLeft > 10 ? 'blink'
+                  t.timeLeft <= 15 ? 'bg-green-700'
+                    : t.timeLeft <= 25 && t.timeLeft > 15 ? 'blink'
                     : t.type === 'Mutant Spawning' ? 'bg-purple-700'
                     : 'bg-gray-700'
                     
                 }`}
               >
-                {t.channel} channel - {t.type} - {Math.floor(t.timeLeft / 60)}:
-                {String(t.timeLeft % 60).padStart(2, '0')}
-                {t.timeLeft <= 10 && " SPAWNED"}
+                {t.channel} channel - {t.type} - {t.timeLeft >= 15 && Math.floor(t.timeLeft-15 / 60)}:
+                {t.timeLeft >= 15 && String(t.timeLeft-15 % 60).padStart(2, '0')}
+                {t.timeLeft <= 15 && " SPAWNED"}
               </div>
             ))
           )}
