@@ -336,28 +336,32 @@ export default function App() {
           </div>
         </div>
         <div className="mb-4 p-4 bg-gray-800 rounded-lg w-full text-center">
-          <h2 className="text-xl font-semibold">Boss Timeline</h2>
-          {timers.length === 0 ? (
-            <p className="text-gray-400">No active timers.</p>
-          ) : (
-            timers.map((t, index) => (
-              <div
-                key={index}
-                className={`mt-2 p-2 rounded-lg text-white text-center ${
-                  t.timeLeft <= 15 ? 'bg-green-700'
-                    : t.timeLeft <= 25 && t.timeLeft > 15 ? 'blink'
-                    : t.type === 'Mutant Spawning' ? 'bg-purple-700'
-                    : 'bg-gray-700'
-                    
-                }`}
-              >
-                {t.channel} channel - {t.type} - {Math.floor(t.timeLeft-15 / 60)}:
-                {String(t.timeLeft-15 % 60).padStart(2, '0')}
-                {t.timeLeft <= 15 && " SPAWNED"}
-              </div>
-            ))
-          )}
+  <h2 className="text-xl font-semibold">Boss Timeline</h2>
+  {timers.length === 0 ? (
+    <p className="text-gray-400">No active timers.</p>
+  ) : (
+    timers.map((t, index) => {
+      // Store t.timeLeft in a variable and subtract 15
+      const adjustedTimeLeft = t.timeLeft - 15;
+
+      return (
+        <div
+          key={index}
+          className={`mt-2 p-2 rounded-lg text-white text-center ${
+            t.timeLeft <= 15 ? 'bg-green-700'
+              : t.timeLeft <= 25 && t.timeLeft > 15 ? 'blink'
+              : t.type === 'Mutant Spawning' ? 'bg-purple-700'
+              : 'bg-gray-700'
+          }`}
+        >
+          {t.channel} channel - {t.type} - {t.timeLeft >= 15 && Math.floor(adjustedTimeLeft / 60)}:
+          {t.timeLeft >= 15 && String(adjustedTimeLeft % 60).padStart(2, '0')}
+          {t.timeLeft <= 15 && " SPAWNED"}
         </div>
+      );
+    })
+  )}
+</div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full">
           {[...Array(5)].map((_, i) => (
             <div className="p-4 bg-gray-800 rounded-lg flex flex-col items-center text-nowrap ">
