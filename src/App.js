@@ -344,11 +344,9 @@ export default function App() {
               <div
                 key={index}
                 className={`mt-2 p-2 rounded-lg text-white text-center ${
-                  t.timeLeft <= 20 
-                    ? 'blink'
-                    : t.type === 'Mutant Spawning'
-                    ? 'bg-orange-500'
-                    : t.timeLeft <= 10 ? 'bg-green-500'
+                  t.timeLeft <= 10 ? 'bg-green-500'
+                    : t.timeLeft <= 20 && t.timeLeft > 10 ? 'blink'
+                    : t.type === 'Mutant Spawning' ? 'bg-orange-500'
                     : 'bg-gray-700'
                     
                 }`}
