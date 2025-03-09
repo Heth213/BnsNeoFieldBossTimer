@@ -362,28 +362,34 @@ export default function App() {
     })
   )}
 </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full">
-          {[...Array(5)].map((_, i) => (
-            <div className="p-4 bg-gray-800 rounded-lg flex flex-col items-center text-nowrap ">
-              <input
-                type="text"
-                placeholder="Enter channel (1-50)"
-                ref={channelRef.current[i]}
-                className="p-2 text-black rounded w-full text-center mb-4"
-              />
+<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full">
+  {[...Array(5)].map((_, i) => (
+    <div className="p-4 bg-gray-800 rounded-lg flex flex-col items-center text-nowrap" key={i}>
+      <input
+        type="text"
+        placeholder="Enter channel (1-50)"
+        ref={channelRef.current[i]}
+        className="p-2 text-black rounded w-full text-center mb-4"
+      />
 
-              {Object.keys(TIMER_VALUES).map((type) => (
-                <button
-                  key={type}
-                  className="mt-2 w-full p-2 rounded bg-blue-600 hover:bg-blue-700"
-                  onClick={() => handleStartTimer(type, i)}
-                >
-                  {type}
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
+      {Object.keys(TIMER_VALUES).map((type) => (
+        <button
+          key={type}
+          className={`mt-2 w-full p-2 rounded ${
+            type === 'Boss Dead'
+              ? 'bg-red-600 hover:bg-red-700'
+              : type === 'Mutant Spawning'
+              ? 'bg-purple-600 hover:bg-purple-700'
+              : 'bg-blue-600 hover:bg-blue-700'
+          }`}
+          onClick={() => handleStartTimer(type, i)}
+        >
+          {type}
+        </button>
+      ))}
+    </div>
+  ))}
+</div>
 
         <footer className="mt-auto text-gray-400 text-sm text-center w-full py-2">
           Created by Lolicaust © {new Date().getFullYear()}
