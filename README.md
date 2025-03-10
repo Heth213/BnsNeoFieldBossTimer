@@ -1,5 +1,9 @@
  Website working on: [Here](https://bnsbosstimers.netlify.app/) - no trolling please, thanks.
 
+## My changes
+- Added extra 15sec to show SPAWNED after the timer ends
+- Changed colors
+- Changed alert sound
 
 
 # Field Boss Timer
@@ -8,7 +12,7 @@
 
 Field Boss Timer is a web application designed to track the respawn times of bosses in BnS Neo. It allows users to add timers, synchronize in real-time, and adjust notification sounds.
 
-![Alt text](https://i.imgur.com/JM77ngl.png)
+![Alt text](https://i.imgur.com/UrtEPGJ.png)
 
 ## 🚀 Features
 
