@@ -34,12 +34,14 @@ export default function App() {
   const [interactionOccurred, setInteractionOccurred] = useState(false);
   const channelRef = useRef([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [userCount, setUserCount] = useState(0);
 
   useEffect(() => {
     channelRef.current = Array(5)
       .fill()
       .map((_, i) => channelRef.current[i] || React.createRef());
   }, []);
+
 
   const toggleAudio = () => {
     setAudioEnabled((prev) => {
@@ -261,14 +263,125 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    const setupActiveUser = async () => {
+      // Generate or get existing userId
+      const userId = localStorage.getItem('userId') || crypto.randomUUID();
+      localStorage.setItem('userId', userId);
+
+      // Clean up old inactive users (older than 3 minutes) and any existing entry for this userId
+      await Promise.all([
+        supabase
+          .from('active_users')
+          .delete()
+          .lt('created_at', new Date(Date.now() - 3 * 60 * 1000).toISOString()),
+        supabase
+          .from('active_users')
+          .delete()
+          .eq('user_id', userId)
+      ]);
+
+      // Add current user
+      await supabase
+        .from('active_users')
+        .insert({
+          user_id: userId,
+          created_at: new Date().toISOString(),
+        });
+
+      // Fetch initial count after adding user
+      await fetchActiveUserCount();
+
+      // Set up real-time subscription
+      const subscription = supabase
+        .channel('active_users')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'active_users' },
+          () => {
+            fetchActiveUserCount();
+          }
+        )
+        .subscribe();
+
+      // Set up periodic heartbeat to update user's timestamp
+      const heartbeatInterval = setInterval(async () => {
+        await supabase
+          .from('active_users')
+          .update({ created_at: new Date().toISOString() })
+          .eq('user_id', userId);
+      }, 30000); // Update every 30 seconds
+
+      // Function to remove user
+      const removeUser = async () => {
+        try {
+          await supabase
+            .from('active_users')
+            .delete()
+            .eq('user_id', userId);
+        } catch (error) {
+          console.error('Error removing user:', error);
+        }
+      };
+
+
+      const handleBeforeUnload = () => {
+        removeUser();
+        clearInterval(heartbeatInterval);
+      };
+
+
+      // Add event listeners
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      window.addEventListener('visibilitychange', async () => {
+        if (document.visibilityState === 'hidden') {
+          removeUser();
+        } else if (document.visibilityState === 'visible') {
+          // Re-add user when they become active again
+          await supabase
+            .from('active_users')
+            .insert({
+              user_id: userId,
+              created_at: new Date().toISOString(),
+            })
+            .select();
+          await fetchActiveUserCount();
+        }
+      });
+
+      // Cleanup function
+      return () => {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+        window.removeEventListener('visibilitychange', handleBeforeUnload);
+        clearInterval(heartbeatInterval);
+        removeUser();
+        supabase.removeChannel(subscription);
+      };
+    };
+
+    setupActiveUser();
+  }, []);
+
+  const fetchActiveUserCount = async () => {
+    const { count, error } = await supabase
+      .from('active_users')
+      .select('*', { count: 'exact', head: true });
+
+    if (!error && count !== null) {
+      setUserCount(count);
+    } else {
+      console.error('Error fetching user count:', error);
+    }
+  };
+
   return (
-    <div className="p-4 max-w-full mx-auto text-white bg-gray-900 min-h-screen flex items-center justify-center w-full h-full overflow-auto flex-wrap">
+    <div className="p-2 sm:p-4 max-w-full mx-auto text-white bg-gray-900/95 min-h-screen flex items-center justify-center w-full h-full overflow-auto flex-wrap backdrop-blur-sm">
       <style>
         {`
           @keyframes blink {
-            0% { background-color: red; }
+            0% { background-color: rgba(239, 68, 68, 0.7); }
             50% { background-color: transparent; }
-            100% { background-color: red; }
+            100% { background-color: rgba(239, 68, 68, 0.7); }
           }
           .blink {
             animation: blink 1s infinite;
@@ -277,20 +390,38 @@ export default function App() {
             height: 100%;
             margin: 0;
             padding: 0;
-            background-color: #1a1a1a;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d3748 100%);
+          }
+          @media (max-width: 640px) {
+            .grid {
+              grid-template-columns: 1fr;
+            }
+            .flex-wrap {
+              flex-wrap: wrap;
+            }
+          }
+          .glass {
+            background: rgba(31, 41, 55, 0.4);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+          }
+          .glass-hover:hover {
+            background: rgba(31, 41, 55, 0.6);
+            transition: all 0.3s ease;
           }
         `}
       </style>
-      <div className="w-full max-w-7xl px-4 flex flex-col items-center justify-center">
-        <div className="flex items-center justify-between w-full relative mb-4">
+      <div className="w-full max-w-7xl px-2 sm:px-4 flex flex-col items-center justify-center">
+        <div className="flex flex-col sm:flex-row items-center justify-between w-full relative mb-4 gap-2">
           <div className="flex-1"></div>
-          <div className="flex items-center gap-2 absolute left-1/2 transform -translate-x-1/2 flex-grow">
-            <h1 className="text-2xl text-nowrap font-bold">
+          <div className="flex flex-col sm:flex-row items-center gap-2 relative sm:absolute sm:left-1/2 sm:transform sm:-translate-x-1/2 flex-grow">
+            <h1 className="text-xl sm:text-2xl text-center sm:text-nowrap font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">
               Field Boss Timer ({selectedBoss})
             </h1>
             <div className="relative group flex items-center">
-              <HelpCircle className="text-white cursor-pointer" size={24} />
-              <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-64 p-2 text-sm bg-gray-800 text-white rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+              <HelpCircle className="text-white/90 cursor-pointer" size={24} />
+              <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-64 p-2 text-sm glass text-white/90 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
                 <p>
                   <strong>Boss Dead</strong> - Click when boss is killed
                 </p>
@@ -305,23 +436,23 @@ export default function App() {
               </div>
             </div>
             <select
-              className="ml-4 p-2 bg-gray-800 text-white rounded"
+              className="p-2 glass text-white/90 rounded glass-hover"
               value={selectedBoss}
               onChange={(e) => setSelectedBoss(e.target.value)}
             >
               {Object.keys(BOSS_TIMERS).map((boss) => (
-                <option key={boss} value={boss}>
+                <option key={boss} value={boss} className="bg-gray-800">
                   {boss}
                 </option>
               ))}
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={toggleAudio}>
+            <button onClick={toggleAudio} className="glass p-2 rounded-full glass-hover">
               {audioEnabled ? (
-                <Volume2 className="text-white" size={24} />
+                <Volume2 className="text-white/90" size={24} />
               ) : (
-                <VolumeX className="text-white" color="red" size={24} />
+                <VolumeX className="text-white/90" color="rgba(239, 68, 68, 0.9)" size={24} />
               )}
             </button>
             <input
@@ -331,67 +462,68 @@ export default function App() {
               step="0.1"
               value={volume}
               onChange={(e) => setVolume(e.target.value)}
-              className="w-24"
+              className="w-20 sm:w-24 accent-white/90"
             />
           </div>
         </div>
-        <div className="mb-4 p-4 bg-gray-800 rounded-lg w-full text-center">
-  <h2 className="text-xl font-semibold">Boss Timeline</h2>
-  {timers.length === 0 ? (
-    <p className="text-gray-400">No active timers.</p>
-  ) : (
-    timers.map((t, index) => {
-      // Store t.timeLeft in a variable and subtract 15
-      const adjustedTimeLeft = t.timeLeft - 15;
-
-      return (
-        <div
-          key={index}
-          className={`mt-2 p-2 rounded-lg text-white text-center ${
-            t.timeLeft <= 15 ? 'bg-green-700'
-              : t.timeLeft <= 25 && t.timeLeft > 15 ? 'blink'
-              : t.type === 'Mutant Spawning' ? 'bg-purple-700'
-              : 'bg-gray-700'
-          }`}
-        >
-          {t.channel} channel - {t.type} - {t.timeLeft >= 15 && Math.floor(adjustedTimeLeft / 60)}:
-          {t.timeLeft >= 15 && String(adjustedTimeLeft % 60).padStart(2, '0')}
-          {t.timeLeft <= 15 && " SPAWNED"}
+        <div className="text-sm text-white/70 mb-4">
+          Active Users: {userCount}
         </div>
-      );
-    })
-  )}
-</div>
-<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full">
-  {[...Array(5)].map((_, i) => (
-    <div className="p-4 bg-gray-800 rounded-lg flex flex-col items-center text-nowrap" key={i}>
-      <input
-        type="text"
-        placeholder="Enter channel (1-50)"
-        ref={channelRef.current[i]}
-        className="p-2 text-black rounded w-full text-center mb-4"
-      />
+        <div className="mb-4 p-2 sm:p-4 glass rounded-lg w-full text-center">
+          <h2 className="text-lg sm:text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">Boss Timeline</h2>
+          {timers.length === 0 ? (
+            <p className="text-white/70">No active timers.</p>
+          ) : (
+            timers.map((t, index) => {
+              const adjustedTimeLeft = t.timeLeft - 15;
+              return (
+                <div
+                  key={index}
+                  className={`mt-2 p-2 rounded-lg text-white/90 text-center text-sm sm:text-base ${
+                    t.timeLeft <= 15 ? 'bg-green-700/70 backdrop-blur-sm'
+                      : t.timeLeft <= 25 && t.timeLeft > 15 ? 'blink'
+                      : t.type === 'Mutant Spawning' ? 'bg-purple-700/70 backdrop-blur-sm'
+                      : 'glass'
+                  }`}
+                >
+                  {t.channel} channel - {t.type} - {t.timeLeft >= 15 && Math.floor(adjustedTimeLeft / 60)}:
+                  {t.timeLeft >= 15 && String(adjustedTimeLeft % 60).padStart(2, '0')}
+                  {t.timeLeft <= 15 && " SPAWNED"}
+                </div>
+              );
+            })
+          )}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 w-full">
+          {[...Array(5)].map((_, i) => (
+            <div className="p-2 sm:p-4 glass rounded-lg flex flex-col items-center text-nowrap" key={i}>
+              <input
+                type="text"
+                placeholder="Enter channel (1-50)"
+                ref={channelRef.current[i]}
+                className="p-2 glass text-white/90 rounded w-full text-center mb-2 sm:mb-4 text-sm sm:text-base placeholder-white/50"
+              />
 
-      {Object.keys(TIMER_VALUES).map((type) => (
-        <button
-          key={type}
-          className={`mt-2 w-full p-2 rounded ${
-            type === 'Boss Dead'
-              ? 'bg-red-600 hover:bg-red-700'
-              : type === 'Mutant Spawning'
-              ? 'bg-purple-600 hover:bg-purple-700'
-              : 'bg-blue-600 hover:bg-blue-700'
-          }`}
-          onClick={() => handleStartTimer(type, i)}
-        >
-          {type}
-        </button>
-      ))}
-    </div>
-  ))}
-</div>
+              {Object.keys(TIMER_VALUES).map((type) => (
+                <button
+                  key={type}
+                  className={`mt-1 sm:mt-2 w-full p-2 rounded text-sm sm:text-base transition-all duration-300 ${
+                    type === 'Boss Dead'
+                      ? 'bg-red-600/70 hover:bg-red-700/90 backdrop-blur-sm'
+                      : type === 'Mutant Spawning'
+                      ? 'bg-purple-600/70 hover:bg-purple-700/90 backdrop-blur-sm'
+                      : 'bg-blue-600/70 hover:bg-blue-700/90 backdrop-blur-sm'
+                  }`}
+                  onClick={() => handleStartTimer(type, i)}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
 
-        <footer className="mt-auto text-gray-400 text-sm text-center w-full py-2">
+        <footer className="mt-auto text-white/50 text-sm text-center w-full py-2">
           Created by Lolicaust © {new Date().getFullYear()}
         </footer>
       </div>
