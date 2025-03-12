@@ -3,14 +3,18 @@ import { Volume2, VolumeX, HelpCircle, Users, Clock, Plus, X } from 'lucide-reac
 import { supabase } from './supabaseClient';
 
 const BOSS_TIMERS = {
-  Sajifi: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
   ProfaneJiangshi: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
+  Sajifi: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
+  Lycan: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
+  KingKaari: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
   Jiangshi: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
   Gigantura: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
   WuFu: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
   Pinchy: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
   GoldenDeva: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
   Bulbari: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
+  Other1: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
+  Other2: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
 };
 
 const alertSound = new Audio('/alert.mp3');
