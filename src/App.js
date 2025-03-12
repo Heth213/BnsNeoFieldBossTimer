@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, VolumeX, HelpCircle } from 'lucide-react';
+import { Volume2, VolumeX, HelpCircle, Users, Clock, Plus, X } from 'lucide-react';
 import { supabase } from './supabaseClient';
 
 const BOSS_TIMERS = {
@@ -7,11 +7,7 @@ const BOSS_TIMERS = {
   Gigantura: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
   WuFu: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
   Pinchy: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
-  GoldenDeva: {
-    'Boss Dead': 315,
-    'Mutant Spawning': 135,
-    'Mutant Dead': 495,
-  },
+  GoldenDeva: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
   Bulbari: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
 };
 
@@ -19,29 +15,25 @@ const alertSound = new Audio('/alert.mp3');
 const silentSound = new Audio('/silence.mp3');
 
 export default function App() {
-  const [selectedBoss, setSelectedBoss] = useState(
-    () => localStorage.getItem('selectedBoss') || 'Jiangshi'
-  );
+  const [selectedBoss, setSelectedBoss] = useState(() => localStorage.getItem('selectedBoss') || 'Jiangshi');
   const TIMER_VALUES = BOSS_TIMERS[selectedBoss];
   const [timers, setTimers] = useState([]);
-  const [volume, setVolume] = useState(
-    () => parseFloat(localStorage.getItem('volume')) || 0.5
-  );
+  const [volume, setVolume] = useState(() => parseFloat(localStorage.getItem('volume')) || 0.5);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [audioEnabled, setAudioEnabled] = useState(
-    () => JSON.parse(localStorage.getItem('audioEnabled')) || false
-  );
+  const [audioEnabled, setAudioEnabled] = useState(() => JSON.parse(localStorage.getItem('audioEnabled')) || false);
   const [interactionOccurred, setInteractionOccurred] = useState(false);
-  const channelRef = useRef([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [userCount, setUserCount] = useState(0);
+  const [quickAddChannels, setQuickAddChannels] = useState(() => 
+    Array.from({ length: 5 }, (_, index) => ({ id: index + 1, value: '' }))
+  );
+  const channelRef = useRef([]);
 
   useEffect(() => {
     channelRef.current = Array(5)
       .fill()
       .map((_, i) => channelRef.current[i] || React.createRef());
   }, []);
-
 
   const toggleAudio = () => {
     setAudioEnabled((prev) => {
@@ -211,19 +203,6 @@ export default function App() {
     return () => clearInterval(interval);
   }, [timers, isPlaying, selectedBoss, audioEnabled]);
 
-  const handleStartTimer = (type, index) => {
-    const channelValue = channelRef.current[index].current?.value?.trim();
-    if (
-      !channelValue ||
-      isNaN(channelValue) ||
-      channelValue < 1 ||
-      channelValue > 50
-    ) {
-      console.error('Wrong channel number');
-      return;
-    }
-    startTimer(channelValue, type);
-  };
 
   const startTimer = async (channel, type) => {
     if (!channel || !type || isProcessing) return;
@@ -374,158 +353,236 @@ export default function App() {
     }
   };
 
+  const handleQuickAdd = async (type, channelId) => {
+    const channel = quickAddChannels.find(ch => ch.id === channelId);
+    if (!channel || !channel.value || isNaN(channel.value) || channel.value < 1 || channel.value > 50) {
+      return;
+    }
+    await startTimer(channel.value, type);
+  };
+
+
+  const addNewChannel = () => {
+    setQuickAddChannels(prev => [...prev, { 
+      id: Math.max(0, ...prev.map(ch => ch.id)) + 1,
+      value: '' 
+    }]);
+  };
+
+  const removeChannel = (idToRemove) => {
+    setQuickAddChannels(prev => prev.filter(ch => ch.id !== idToRemove));
+  };
+
+  const updateChannelValue = (id, value) => {
+    setQuickAddChannels(prev => 
+      prev.map(ch => ch.id === id ? { ...ch, value } : ch)
+    );
+  };
+
+
   return (
-    <div className="p-2 sm:p-4 max-w-full mx-auto text-white bg-gray-900/95 min-h-screen flex items-center justify-center w-full h-full overflow-auto flex-wrap backdrop-blur-sm">
-      <style>
-        {`
-          @keyframes blink {
-            0% { background-color: rgba(239, 68, 68, 0.7); }
-            50% { background-color: transparent; }
-            100% { background-color: rgba(239, 68, 68, 0.7); }
-          }
-          .blink {
-            animation: blink 1s infinite;
-          }
-          html, body, #root {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d3748 100%);
-          }
-          @media (max-width: 640px) {
-            .grid {
-              grid-template-columns: 1fr;
-            }
-            .flex-wrap {
-              flex-wrap: wrap;
-            }
-          }
-          .glass {
-            background: rgba(31, 41, 55, 0.4);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-          }
-          .glass-hover:hover {
-            background: rgba(31, 41, 55, 0.6);
-            transition: all 0.3s ease;
-          }
-        `}
-      </style>
-      <div className="w-full max-w-7xl px-2 sm:px-4 flex flex-col items-center justify-center">
-        <div className="flex flex-col sm:flex-row items-center justify-between w-full relative mb-4 gap-2">
-          <div className="flex-1"></div>
-          <div className="flex flex-col sm:flex-row items-center gap-2 relative sm:absolute sm:left-1/2 sm:transform sm:-translate-x-1/2 flex-grow">
-            <h1 className="text-xl sm:text-2xl text-center sm:text-nowrap font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">
-              Field Boss Timer ({selectedBoss})
-            </h1>
-            <div className="relative group flex items-center">
-              <HelpCircle className="text-white/90 cursor-pointer" size={24} />
-              <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-64 p-2 text-sm glass text-white/90 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                <p>
-                  <strong>Boss Dead</strong> - Click when boss is killed
-                </p>
-                <p>
-                  <strong>Mutant Spawning</strong> - Click when lightning
-                  spawns after boss is killed
-                </p>
-                <p>
-                  <strong>Mutant Dead</strong> - Click when lightning boss is
-                  killed
-                </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800/30 to-slate-900 text-white fixed inset-0 w-full">
+      <div className="relative min-h-screen">
+        {/* Header - Made sticky */}
+        <div className="sticky top-0 z-50 bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-900/90 backdrop-blur-sm border-b border-slate-800/50 shadow-lg">
+          <div className="container mx-auto px-4 py-4 max-w-7xl">
+            <div className="flex flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200">
+                  BnS Field Boss Timer
+                </h1>
+                <div className="flex items-center gap-2 bg-slate-800/50 px-3 py-1 rounded-full border border-slate-700/50">
+                  <Users size={16} />
+                  <span className="text-sm text-slate-300" title="Active users">{userCount}</span>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <select
+                  className="bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-slate-600 text-sm"
+                  value={selectedBoss}
+                  onChange={(e) => setSelectedBoss(e.target.value)}
+                >
+                  {Object.keys(BOSS_TIMERS).map((boss) => (
+                    <option key={boss} value={boss} className="bg-slate-900">{boss}</option>
+                  ))}
+                </select>
+                
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={toggleAudio}
+                    className="p-2 rounded-full hover:bg-slate-800/50 transition-colors"
+                  >
+                    {audioEnabled ? (
+                      <Volume2 size={18} className="text-emerald-400" />
+                    ) : (
+                      <VolumeX size={18} className="text-slate-400" />
+                    )}
+                  </button>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={volume}
+                    onChange={(e) => setVolume(e.target.value)}
+                    className="w-24"
+                  />
+                </div>
               </div>
             </div>
-            <select
-              className="p-2 glass text-white/90 rounded glass-hover"
-              value={selectedBoss}
-              onChange={(e) => setSelectedBoss(e.target.value)}
-            >
-              {Object.keys(BOSS_TIMERS).map((boss) => (
-                <option key={boss} value={boss} className="bg-gray-800">
-                  {boss}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={toggleAudio} className="glass p-2 rounded-full glass-hover">
-              {audioEnabled ? (
-                <Volume2 className="text-white/90" size={24} />
-              ) : (
-                <VolumeX className="text-white/90" color="rgba(239, 68, 68, 0.9)" size={24} />
-              )}
-            </button>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.1"
-              value={volume}
-              onChange={(e) => setVolume(e.target.value)}
-              className="w-20 sm:w-24 accent-white/90"
-            />
           </div>
         </div>
-        <div className="text-sm text-white/70 mb-4">
-          Active Users: {userCount}
-        </div>
-        <div className="mb-4 p-2 sm:p-4 glass rounded-lg w-full text-center">
-          <h2 className="text-lg sm:text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">Boss Timeline</h2>
-          {timers.length === 0 ? (
-            <p className="text-white/70">No active timers.</p>
-          ) : (
-            timers.map((t, index) => {
-              const adjustedTimeLeft = t.timeLeft - 15;
-              return (
-                <div
-                  key={index}
-                  className={`mt-2 p-2 rounded-lg text-white/90 text-center text-sm sm:text-base ${
-                    t.timeLeft <= 15 ? 'bg-green-700/70 backdrop-blur-sm'
-                      : t.timeLeft <= 25 && t.timeLeft > 15 ? 'blink'
-                      : t.type === 'Mutant Spawning' ? 'bg-purple-700/70 backdrop-blur-sm'
-                      : 'glass'
-                  }`}
-                >
-                  {t.channel} channel - {t.type} - {t.timeLeft >= 15 && Math.floor(adjustedTimeLeft / 60)}:
-                  {t.timeLeft >= 15 && String(adjustedTimeLeft % 60).padStart(2, '0')}
-                  {t.timeLeft <= 15 && " SPAWNED"}
-                </div>
-              );
-            })
-          )}
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 w-full">
-          {[...Array(5)].map((_, i) => (
-            <div className="p-2 sm:p-4 glass rounded-lg flex flex-col items-center text-nowrap" key={i}>
-              <input
-                type="text"
-                placeholder="Enter channel (1-50)"
-                ref={channelRef.current[i]}
-                className="p-2 glass text-white/90 rounded w-full text-center mb-2 sm:mb-4 text-sm sm:text-base placeholder-white/50"
-              />
 
-              {Object.keys(TIMER_VALUES).map((type) => (
-                <button
-                  key={type}
-                  className={`mt-1 sm:mt-2 w-full p-2 rounded text-sm sm:text-base transition-all duration-300 ${
-                    type === 'Boss Dead'
-                      ? 'bg-red-600/70 hover:bg-red-700/90 backdrop-blur-sm'
-                      : type === 'Mutant Spawning'
-                      ? 'bg-purple-600/70 hover:bg-purple-700/90 backdrop-blur-sm'
-                      : 'bg-blue-600/70 hover:bg-blue-700/90 backdrop-blur-sm'
-                  }`}
-                  onClick={() => handleStartTimer(type, i)}
-                >
-                  {type}
-                </button>
-              ))}
+        {/* Main Content */}
+        <div className="container mx-auto px-4 pt-24 pb-6 max-w-7xl">
+          <h1 className="text-4xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200">
+            {selectedBoss}
+          </h1>
+          <div className="grid grid-cols-5 gap-8">
+            {/* Timer Display */}
+            <div className="col-span-3">
+              <h2 className="text-lg font-semibold text-slate-200 mb-7">Active Timers</h2>
+              <div className={`grid gap-2 ${timers.length > 7 ? 'max-h-[calc(100vh-22rem)] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-sky-500/30 hover:[&::-webkit-scrollbar-thumb]:bg-sky-500/50' : ''}`}>
+                {timers.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400">
+                    <Clock size={36} className="mx-auto mb-3 opacity-50" />
+                    <p className="text-sm">No active timers</p>
+                  </div>
+                ) : (
+                  timers.map((t, index) => {
+                    const adjustedTimeLeft = t.timeLeft - 15;
+                    const minutes = Math.floor(adjustedTimeLeft / 60);
+                    const seconds = adjustedTimeLeft % 60;
+                    
+                    return (
+                      <div
+                        key={index}
+                        className={`
+                          p-4 rounded-lg flex items-center justify-between gap-4 w-full relative overflow-hidden
+                          ${t.timeLeft <= 15 ? 'bg-slate-800/80 border border-emerald-500/30' :
+                            t.timeLeft <= 25 ? 'animate-pulse bg-slate-800/80 border border-red-500/30' :
+                            t.type === 'Mutant Spawning' ? 'bg-violet-900/50 border-2 border-violet-500/50' :
+                            'bg-slate-800/50 border border-slate-700/30'}
+                        `}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-20 h-10 rounded-full bg-slate-900/80 flex items-center justify-center border border-slate-700/30 flex-shrink-0">
+                            <span className="text-lg font-bold">Ch.{t.channel}</span>
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-medium text-base">{t.type}</h3>
+                          </div>
+                        </div>
+                        <div className="text-xl font-mono font-medium flex-shrink-0">
+                          {t.timeLeft <= 15 ? (
+                            <span className="text-emerald-400">SPAWNED</span>
+                          ) : (
+                            <span className={t.timeLeft <= 25 ? 'text-red-400' : 'text-slate-300'}>
+                              {minutes}:{String(seconds).padStart(2, '0')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
-          ))}
-        </div>
 
-        <footer className="mt-auto text-white/50 text-sm text-center w-full py-2">
-          Created by Lolicaust © {new Date().getFullYear()}
-        </footer>
+            {/* Quick Add Timer Panels */}
+            <div className="col-span-2 flex flex-col gap-2">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold text-slate-200">Quick Add Timers</h2>
+                <button
+                  onClick={addNewChannel}
+                  className="p-2 hover:bg-slate-800/50 rounded-full text-slate-300 bg-slate-900/95 border border-slate-700/50"
+                  title="Add new channel"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+              <div className={`flex flex-col gap-2 ${quickAddChannels.length > 5 ? 'max-h-[calc(100vh-22rem)] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-sky-500/30 hover:[&::-webkit-scrollbar-thumb]:bg-sky-500/50' : ''}`}>
+                {quickAddChannels.map((channel) => (
+                  <div key={channel.id} className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700/50 p-2">
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between gap-2 bg-slate-900/50 rounded px-2">
+                        <input
+                          type="text"
+                          value={channel.value}
+                          onChange={(e) => updateChannelValue(channel.id, e.target.value)}
+                          placeholder="Channel"
+                          className="w-full bg-transparent py-1.5 text-center focus:outline-none text-base"
+                        />
+                        {quickAddChannels.length > 1 && (
+                          <button
+                            onClick={() => removeChannel(channel.id)}
+                            className="p-1 hover:bg-slate-700/30 rounded text-slate-300"
+                            title="Remove channel"
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        <button
+                          onClick={() => handleQuickAdd('Boss Dead', channel.id)}
+                          className="px-2 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 rounded text-xs border border-rose-500/20 transition-colors flex items-center justify-center font-medium text-rose-100"
+                        >
+                          Boss Dead
+                        </button>
+                        <button
+                          onClick={() => handleQuickAdd('Mutant Spawning', channel.id)}
+                          className="px-2 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 rounded text-xs border border-violet-500/20 transition-colors flex items-center justify-center font-medium text-violet-100"
+                        >
+                          Mutant Spawning
+                        </button>
+                        <button
+                          onClick={() => handleQuickAdd('Mutant Dead', channel.id)}
+                          className="px-2 py-1.5 bg-sky-500/20 hover:bg-sky-500/30 rounded text-xs border border-sky-500/20 transition-colors flex items-center justify-center font-medium text-sky-100"
+                          title="Mutant Dead"
+                        >
+                          Mutant Dead
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Help Button */}
+          <div className="fixed lg:top-4 lg:right-4 hidden lg:block z-[60]">
+            <div className="relative group">
+              <HelpCircle className="text-slate-400 cursor-help w-6 h-6" />
+              <div className="absolute right-0 mt-2 w-80 p-4 text-sm bg-slate-900/95 backdrop-blur-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-slate-700/50">
+                <h4 className="font-semibold mb-2 text-slate-200">Timer Types</h4>
+                <ul className="space-y-2 text-slate-300 mb-4">
+                  <li className="flex items-center gap-2">
+                    <span className="w-28 text-rose-100">Boss Dead</span>
+                    <span className="text-slate-400">Click when boss is killed</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-28 text-violet-100">Mutant Spawning</span>
+                    <span className="text-slate-400">Click when lightning spawns after boss is killed</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-28 text-sky-100">Mutant Dead</span>
+                    <span className="text-slate-400">Click when lightning boss is killed</span>
+                  </li>
+                </ul>
+                <h4 className="font-semibold mb-2 text-slate-200">Keyboard Shortcuts</h4>
+                <ul className="space-y-2 text-slate-300">
+                  <li className="flex items-center gap-2">
+                    <kbd className="px-2 py-1 bg-slate-800 rounded text-xs border border-slate-700/50">+</kbd>
+                    <span>Add new channel panel</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
