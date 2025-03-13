@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, VolumeX, HelpCircle, Users, Clock, Plus, X } from 'lucide-react';
+import { Volume2, VolumeX, HelpCircle, Users, Clock, Plus, X, Calculator as CalculatorIcon } from 'lucide-react';
 import { supabase } from './supabaseClient';
+import Calculator from './components/Calculator';
 
 const BOSS_TIMERS = {
   ProfaneJiangshi: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
@@ -19,6 +20,7 @@ const silentSound = new Audio('/silence.mp3');
 
 export default function App() {
   const [selectedBoss, setSelectedBoss] = useState(() => localStorage.getItem('selectedBoss') || 'Jiangshi');
+  const [activeTab, setActiveTab] = useState('timers');
   const TIMER_VALUES = BOSS_TIMERS[selectedBoss];
   const [timers, setTimers] = useState([]);
   const [volume, setVolume] = useState(() => parseFloat(localStorage.getItem('volume')) || 0.5);
@@ -401,36 +403,64 @@ export default function App() {
               </div>
               
               <div className="flex items-center gap-4">
-                <select
-                  className="bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-slate-600 text-sm"
-                  value={selectedBoss}
-                  onChange={(e) => setSelectedBoss(e.target.value)}
-                >
-                  {Object.keys(BOSS_TIMERS).map((boss) => (
-                    <option key={boss} value={boss} className="bg-slate-900">{boss}</option>
-                  ))}
-                </select>
-                
-                <div className="flex items-center gap-2">
-                  <button 
-                    onClick={toggleAudio}
-                    className="p-2 rounded-full hover:bg-slate-800/50 transition-colors"
+                {activeTab === 'timers' && (
+                  <>
+                    <select
+                      className="bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-slate-600 text-sm"
+                      value={selectedBoss}
+                      onChange={(e) => setSelectedBoss(e.target.value)}
+                    >
+                      {Object.keys(BOSS_TIMERS).map((boss) => (
+                        <option key={boss} value={boss} className="bg-slate-900">{boss}</option>
+                      ))}
+                    </select>
+                    
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={toggleAudio}
+                        className="p-2 rounded-full hover:bg-slate-800/50 transition-colors"
+                      >
+                        {audioEnabled ? (
+                          <Volume2 size={18} className="text-emerald-400" />
+                        ) : (
+                          <VolumeX size={18} className="text-slate-400" />
+                        )}
+                      </button>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={volume}
+                        onChange={(e) => setVolume(e.target.value)}
+                        className="w-24"
+                      />
+                    </div>
+                  </>
+                )}
+                <div className="flex gap-2 ml-auto">
+                  <button
+                    onClick={() => setActiveTab('timers')}
+                    className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-1 ${
+                      activeTab === 'timers'
+                        ? 'bg-slate-700/50 text-slate-200'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
                   >
-                    {audioEnabled ? (
-                      <Volume2 size={18} className="text-emerald-400" />
-                    ) : (
-                      <VolumeX size={18} className="text-slate-400" />
-                    )}
+                    <Clock size={18} />
+                    <span>Timers</span>
                   </button>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.1"
-                    value={volume}
-                    onChange={(e) => setVolume(e.target.value)}
-                    className="w-24"
-                  />
+                  <button
+                    onClick={() => setActiveTab('calculator')}
+                    className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-1 ${
+                      activeTab === 'calculator'
+                        ? 'bg-slate-700/50 text-slate-200'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <CalculatorIcon size={18} />
+                    <span>Calculator</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -439,121 +469,127 @@ export default function App() {
 
         {/* Main Content */}
         <div className="container mx-auto px-4 pt-24 pb-6 max-w-7xl">
-          <h1 className="text-4xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200">
-            {selectedBoss}
-          </h1>
-          <div className="grid grid-cols-5 gap-8">
-            {/* Timer Display */}
-            <div className="col-span-3">
-              <h2 className="text-lg font-semibold text-slate-200 mb-7">Active Timers</h2>
-              <div className={`grid gap-2 ${timers.length > 7 ? 'max-h-[calc(100vh-22rem)] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-sky-500/30 hover:[&::-webkit-scrollbar-thumb]:bg-sky-500/50' : ''}`}>
-                {timers.length === 0 ? (
-                  <div className="text-center py-8 text-slate-400">
-                    <Clock size={36} className="mx-auto mb-3 opacity-50" />
-                    <p className="text-sm">No active timers</p>
-                  </div>
-                ) : (
-                  timers.map((t, index) => {
-                    const adjustedTimeLeft = t.timeLeft - 15;
-                    const minutes = Math.floor(adjustedTimeLeft / 60);
-                    const seconds = adjustedTimeLeft % 60;
-                    
-                    return (
-                      <div
-                        key={index}
-                        className={`
-                          p-4 rounded-lg flex items-center justify-between gap-4 w-full relative overflow-hidden
-                          ${t.timeLeft <= 15 ? 'bg-slate-800/80 border border-emerald-500/30' :
-                            t.timeLeft <= 25 ? 'animate-pulse bg-slate-800/80 border border-red-500/30' :
-                            t.type === 'Mutant Spawning' ? 'bg-violet-900/50 border-2 border-violet-500/50' :
-                            'bg-slate-800/50 border border-slate-700/30'}
-                        `}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-20 h-10 rounded-full bg-slate-900/80 flex items-center justify-center border border-slate-700/30 flex-shrink-0">
-                            <span className="text-lg font-bold">Ch.{t.channel}</span>
-                          </div>
-                          <div className="min-w-0">
-                            <h3 className="font-medium text-base">{t.type}</h3>
-                          </div>
-                        </div>
-                        <div className="text-xl font-mono font-medium flex-shrink-0">
-                          {t.timeLeft <= 15 ? (
-                            <span className="text-emerald-400">SPAWNED</span>
-                          ) : (
-                            <span className={t.timeLeft <= 25 ? 'text-red-400' : 'text-slate-300'}>
-                              {minutes}:{String(seconds).padStart(2, '0')}
-                            </span>
-                          )}
-                        </div>
+          {activeTab === 'timers' ? (
+            <>
+              <h1 className="text-4xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200">
+                {selectedBoss}
+              </h1>
+              <div className="grid grid-cols-5 gap-8">
+                {/* Timer Display */}
+                <div className="col-span-3">
+                  <h2 className="text-lg font-semibold text-slate-200 mb-7">Active Timers</h2>
+                  <div className={`grid gap-2 ${timers.length > 7 ? 'max-h-[calc(100vh-22rem)] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-sky-500/30 hover:[&::-webkit-scrollbar-thumb]:bg-sky-500/50' : ''}`}>
+                    {timers.length === 0 ? (
+                      <div className="text-center py-8 text-slate-400">
+                        <Clock size={36} className="mx-auto mb-3 opacity-50" />
+                        <p className="text-sm">No active timers</p>
                       </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* Quick Add Timer Panels */}
-            <div className="col-span-2 flex flex-col gap-2">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-slate-200">Quick Add Timers</h2>
-                <button
-                  onClick={addNewChannel}
-                  className="p-2 hover:bg-slate-800/50 rounded-full text-slate-300 bg-slate-900/95 border border-slate-700/50"
-                  title="Add new channel"
-                >
-                  <Plus size={16} />
-                </button>
-              </div>
-              <div className={`flex flex-col gap-2 ${quickAddChannels.length > 5 ? 'max-h-[calc(100vh-22rem)] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-sky-500/30 hover:[&::-webkit-scrollbar-thumb]:bg-sky-500/50' : ''}`}>
-                {quickAddChannels.map((channel) => (
-                  <div key={channel.id} className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700/50 p-2">
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex items-center justify-between gap-2 bg-slate-900/50 rounded px-2">
-                        <input
-                          type="text"
-                          value={channel.value}
-                          onChange={(e) => updateChannelValue(channel.id, e.target.value)}
-                          placeholder="Channel"
-                          className="w-full bg-transparent py-1.5 text-center focus:outline-none text-base"
-                        />
-                        {quickAddChannels.length > 1 && (
-                          <button
-                            onClick={() => removeChannel(channel.id)}
-                            className="p-1 hover:bg-slate-700/30 rounded text-slate-300"
-                            title="Remove channel"
+                    ) : (
+                      timers.map((t, index) => {
+                        const adjustedTimeLeft = t.timeLeft - 15;
+                        const minutes = Math.floor(adjustedTimeLeft / 60);
+                        const seconds = adjustedTimeLeft % 60;
+                        
+                        return (
+                          <div
+                            key={index}
+                            className={`
+                              p-4 rounded-lg flex items-center justify-between gap-4 w-full relative overflow-hidden
+                              ${t.timeLeft <= 15 ? 'bg-slate-800/80 border border-emerald-500/30' :
+                                t.timeLeft <= 25 ? 'animate-pulse bg-slate-800/80 border border-red-500/30' :
+                                t.type === 'Mutant Spawning' ? 'bg-violet-900/50 border-2 border-violet-500/50' :
+                                'bg-slate-800/50 border border-slate-700/30'}
+                            `}
                           >
-                            <X size={14} />
-                          </button>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-3 gap-1.5">
-                        <button
-                          onClick={() => handleQuickAdd('Boss Dead', channel.id)}
-                          className="px-2 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 rounded text-xs border border-rose-500/20 transition-colors flex items-center justify-center font-medium text-rose-100"
-                        >
-                          Boss Dead
-                        </button>
-                        <button
-                          onClick={() => handleQuickAdd('Mutant Spawning', channel.id)}
-                          className="px-2 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 rounded text-xs border border-violet-500/20 transition-colors flex items-center justify-center font-medium text-violet-100"
-                        >
-                          Mutant Spawning
-                        </button>
-                        <button
-                          onClick={() => handleQuickAdd('Mutant Dead', channel.id)}
-                          className="px-2 py-1.5 bg-sky-500/20 hover:bg-sky-500/30 rounded text-xs border border-sky-500/20 transition-colors flex items-center justify-center font-medium text-sky-100"
-                          title="Mutant Dead"
-                        >
-                          Mutant Dead
-                        </button>
-                      </div>
-                    </div>
+                            <div className="flex items-center gap-4">
+                              <div className="w-20 h-10 rounded-full bg-slate-900/80 flex items-center justify-center border border-slate-700/30 flex-shrink-0">
+                                <span className="text-lg font-bold">Ch.{t.channel}</span>
+                              </div>
+                              <div className="min-w-0">
+                                <h3 className="font-medium text-base">{t.type}</h3>
+                              </div>
+                            </div>
+                            <div className="text-xl font-mono font-medium flex-shrink-0">
+                              {t.timeLeft <= 15 ? (
+                                <span className="text-emerald-400">SPAWNED</span>
+                              ) : (
+                                <span className={t.timeLeft <= 25 ? 'text-red-400' : 'text-slate-300'}>
+                                  {minutes}:{String(seconds).padStart(2, '0')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
-                ))}
+                </div>
+
+                {/* Quick Add Timer Panels */}
+                <div className="col-span-2 flex flex-col gap-2">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-semibold text-slate-200">Quick Add Timers</h2>
+                    <button
+                      onClick={addNewChannel}
+                      className="p-2 hover:bg-slate-800/50 rounded-full text-slate-300 bg-slate-900/95 border border-slate-700/50"
+                      title="Add new channel"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
+                  <div className={`flex flex-col gap-2 ${quickAddChannels.length > 5 ? 'max-h-[calc(100vh-22rem)] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-sky-500/30 hover:[&::-webkit-scrollbar-thumb]:bg-sky-500/50' : ''}`}>
+                    {quickAddChannels.map((channel) => (
+                      <div key={channel.id} className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700/50 p-2">
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center justify-between gap-2 bg-slate-900/50 rounded px-2">
+                            <input
+                              type="text"
+                              value={channel.value}
+                              onChange={(e) => updateChannelValue(channel.id, e.target.value)}
+                              placeholder="Channel"
+                              className="w-full bg-transparent py-1.5 text-center focus:outline-none text-base"
+                            />
+                            {quickAddChannels.length > 1 && (
+                              <button
+                                onClick={() => removeChannel(channel.id)}
+                                className="p-1 hover:bg-slate-700/30 rounded text-slate-300"
+                                title="Remove channel"
+                              >
+                                <X size={14} />
+                              </button>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-3 gap-1.5">
+                            <button
+                              onClick={() => handleQuickAdd('Boss Dead', channel.id)}
+                              className="px-2 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 rounded text-xs border border-rose-500/20 transition-colors flex items-center justify-center font-medium text-rose-100"
+                            >
+                              Boss Dead
+                            </button>
+                            <button
+                              onClick={() => handleQuickAdd('Mutant Spawning', channel.id)}
+                              className="px-2 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 rounded text-xs border border-violet-500/20 transition-colors flex items-center justify-center font-medium text-violet-100"
+                            >
+                              Mutant Spawning
+                            </button>
+                            <button
+                              onClick={() => handleQuickAdd('Mutant Dead', channel.id)}
+                              className="px-2 py-1.5 bg-sky-500/20 hover:bg-sky-500/30 rounded text-xs border border-sky-500/20 transition-colors flex items-center justify-center font-medium text-sky-100"
+                              title="Mutant Dead"
+                            >
+                              Mutant Dead
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </>
+          ) : (
+            <Calculator />
+          )}
 
           {/* Help Button */}
           <div className="fixed lg:top-4 lg:right-4 hidden lg:block z-[60]">
@@ -586,6 +622,15 @@ export default function App() {
             </div>
           </div>
         </div>
+
+        {/* Footer */}
+        <footer className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800/50 py-2">
+          <div className="container mx-auto px-4 max-w-7xl">
+            <p className="text-center text-sm text-slate-400">
+              Created by Lolicaust © | <a href="https://github.com/paticzekm/BnsNeoFieldBossTimer/" target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:text-sky-300">GitHub</a> | Redesigned by Heth
+            </p>
+          </div>
+        </footer>
       </div>
     </div>
   );
