@@ -6,6 +6,7 @@
 - Changed alert sound
 - Redesigned the whole website
 - Added a calculator for stats
+- Added "Dead" button when the boss spawns for faster updating
 
 # Field Boss Timer
 
