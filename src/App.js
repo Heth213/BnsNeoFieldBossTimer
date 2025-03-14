@@ -4,15 +4,15 @@ import { supabase } from './supabaseClient';
 import Calculator from './components/Calculator';
 
 const BOSS_TIMERS = {
-  ProfaneJiangshi: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
-  Sajifi: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
-  Lycan: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
-  KingKaari: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
-  Pinchy: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
-  GoldenDeva: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
-  Bulbari: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
-  Other1: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
-  Other2: { 'Boss Dead': 315, 'Mutant Spawning': 135, 'Mutant Dead': 495 },
+  ProfaneJiangshi: { 'Boss Dead': 335, 'Mutant Spawning': 155, 'Mutant Dead': 515 },
+  Sajifi: { 'Boss Dead': 335, 'Mutant Spawning': 155, 'Mutant Dead': 515 },
+  Lycan: { 'Boss Dead': 335, 'Mutant Spawning': 155, 'Mutant Dead': 515 },
+  KingKaari: { 'Boss Dead': 335, 'Mutant Spawning': 155, 'Mutant Dead': 515 },
+  Pinchy: { 'Boss Dead': 335, 'Mutant Spawning': 155, 'Mutant Dead': 515 },
+  GoldenDeva: { 'Boss Dead': 335, 'Mutant Spawning': 155, 'Mutant Dead': 515 },
+  Bulbari: { 'Boss Dead': 335, 'Mutant Spawning': 155, 'Mutant Dead': 515 },
+  Other1: { 'Boss Dead': 335, 'Mutant Spawning': 155, 'Mutant Dead': 515 },
+  Other2: { 'Boss Dead': 335, 'Mutant Spawning': 155, 'Mutant Dead': 515 },
 };
 
 const alertSound = new Audio('/alert.mp3');
@@ -165,7 +165,7 @@ export default function App() {
               0,
               Math.ceil((t.endTime - Date.now()) / 1000)
             );
-            if (timeLeft <= 25 && timeLeft > 15 && audioEnabled) {
+            if (timeLeft <= 45 && timeLeft > 35 && audioEnabled) {
               shouldPlay = true;
             }
             if (timeLeft === 0) {
@@ -178,11 +178,15 @@ export default function App() {
 
         if (updatedTimers.length > 0) {
           const nextTimer = updatedTimers[0];
-          document.title = `${selectedBoss} - ${
-            nextTimer.channel
-          } - ${Math.floor(nextTimer.timeLeft / 60)}:${String(
-            nextTimer.timeLeft % 60
-          ).padStart(2, '0')} left`;
+          const adjustedTimeLeft = nextTimer.timeLeft - 35;
+
+          if (adjustedTimeLeft <= 0) {
+            document.title = `${selectedBoss} - ${nextTimer.channel} - Spawned`;
+          } else {
+            const minutes = Math.floor(adjustedTimeLeft / 60);
+            const seconds = adjustedTimeLeft % 60;
+            document.title = `${selectedBoss} - ${nextTimer.channel} - ${minutes}:${String(seconds).padStart(2, '0')} left`;
+          }
         } else {
           document.title = 'Field Boss Timer';
         }
@@ -253,12 +257,12 @@ export default function App() {
       const userId = localStorage.getItem('userId') || crypto.randomUUID();
       localStorage.setItem('userId', userId);
 
-      // Clean up old inactive users (older than 3 minutes) and any existing entry for this userId
+      // Clean up old inactive users (older than 5 minutes) and any existing entry for this userId
       await Promise.all([
         supabase
           .from('active_users')
           .delete()
-          .lt('created_at', new Date(Date.now() - 3 * 60 * 1000).toISOString()),
+          .lt('created_at', new Date(Date.now() - 5 * 60 * 1000).toISOString()),
         supabase
           .from('active_users')
           .delete()
@@ -294,7 +298,7 @@ export default function App() {
           .from('active_users')
           .update({ created_at: new Date().toISOString() })
           .eq('user_id', userId);
-      }, 30000); // Update every 30 seconds
+      }, 60000); // Update every 60 seconds
 
       // Function to remove user
       const removeUser = async () => {
@@ -468,7 +472,7 @@ export default function App() {
         </div>
 
         {/* Main Content */}
-        <div className="container mx-auto px-4 pt-24 pb-6 max-w-7xl">
+        <div className="container mx-auto px-4 pt-24 pb-12 max-w-7xl">
           {activeTab === 'timers' ? (
             <>
               <h1 className="text-4xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200">
@@ -486,7 +490,7 @@ export default function App() {
                       </div>
                     ) : (
                       timers.map((t, index) => {
-                        const adjustedTimeLeft = t.timeLeft - 15;
+                        const adjustedTimeLeft = t.timeLeft - 35;
                         const minutes = Math.floor(adjustedTimeLeft / 60);
                         const seconds = adjustedTimeLeft % 60;
                         
@@ -495,8 +499,8 @@ export default function App() {
                             key={index}
                             className={`
                               p-4 rounded-lg flex items-center justify-between gap-4 w-full relative overflow-hidden
-                              ${t.timeLeft <= 15 ? 'bg-slate-800/80 border border-emerald-500/30' :
-                                t.timeLeft <= 25 ? 'animate-pulse bg-slate-800/80 border border-red-500/30' :
+                              ${t.timeLeft <= 35 ? 'bg-slate-800/80 border border-emerald-500/30' :
+                                t.timeLeft <= 45 ? 'animate-pulse bg-slate-800/80 border border-red-500/30' :
                                 t.type === 'Mutant Spawning' ? 'bg-violet-900/50 border-2 border-violet-500/50' :
                                 'bg-slate-800/50 border border-slate-700/30'}
                             `}
@@ -509,11 +513,24 @@ export default function App() {
                                 <h3 className="font-medium text-base">{t.type}</h3>
                               </div>
                             </div>
-                            <div className="text-xl font-mono font-medium flex-shrink-0">
-                              {t.timeLeft <= 15 ? (
-                                <span className="text-emerald-400">SPAWNED</span>
+                            <div className="text-xl font-mono font-medium flex-shrink-0 flex items-center gap-2">
+                              {t.timeLeft <= 35 ? (
+                                <>
+                                  <span className="text-emerald-400">SPAWNED</span>
+                                  <button
+                                    onClick={() => handleQuickAdd(
+                                      t.type === 'Mutant Spawning' ? 'Mutant Dead' : 
+                                      t.type === 'Mutant Dead' ? 'Boss Dead' : 
+                                      t.type, 
+                                      t.channel
+                                    )}
+                                    className="px-2 py-1 bg-rose-500/20 hover:bg-rose-500/30 rounded text-xs border border-rose-500/20 transition-colors font-medium text-rose-100"
+                                  >
+                                    Dead
+                                  </button>
+                                </>
                               ) : (
-                                <span className={t.timeLeft <= 25 ? 'text-red-400' : 'text-slate-300'}>
+                                <span className={t.timeLeft <= 45 ? 'text-red-400' : 'text-slate-300'}>
                                   {minutes}:{String(seconds).padStart(2, '0')}
                                 </span>
                               )}
@@ -624,7 +641,7 @@ export default function App() {
         </div>
 
         {/* Footer */}
-        <footer className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800/50 py-2">
+        <footer className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800/50 py-2 hidden lg:block">
           <div className="container mx-auto px-4 max-w-7xl">
             <p className="text-center text-sm text-slate-400">
               Created by Lolicaust © | <a href="https://github.com/paticzekm/BnsNeoFieldBossTimer/" target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:text-sky-300">GitHub</a> | Redesigned by Heth
