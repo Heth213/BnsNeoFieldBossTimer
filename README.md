@@ -5,6 +5,7 @@
 - Changed colors
 - Changed alert sound
 - Redesigned the whole website
+- Added a calculator for stats
 
 # Field Boss Timer
 
